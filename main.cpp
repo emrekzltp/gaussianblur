@@ -18,7 +18,6 @@ std::vector<std::vector<Pixel>> readPPM(const std::string& filename, int& width,
     if (header != "P6") {
         throw std::runtime_error("Invalid PPM file format");
     }
-    
     file >> width >> height;
     int maxVal;
     file >> maxVal;
