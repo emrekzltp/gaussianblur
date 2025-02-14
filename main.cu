@@ -1,13 +1,14 @@
+main.cu son hal
+// This will be the code for gauss blur run on the GPU
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cmath>
 #include <ctime>
 #include <cuda_runtime.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 
 struct Pixel {
     unsigned char r, g, b;
@@ -62,7 +63,7 @@ std::vector<std::vector<float>> generateGaussianKernel(int kernelSize, float sig
 int main() {
     try {
         std::string inputPath  = "./ex_pics/doggo.jpg";
-        std::string outputPath = "./ex_pics/doggo_blurred.png";
+        std::string outputPath = "output.ppm";
         int width, height, channels;
 
         unsigned char* imageData = stbi_load(inputPath.c_str(), &width, &height, &channels, 3);
@@ -123,14 +124,18 @@ int main() {
         cudaFree(d_output);
         cudaFree(d_kernel);
 
-        std::vector<unsigned char> outputData(width * height * 3);
-        for (int i = 0; i < width * height; i++) {
-            outputData[i * 3] = blurredImage[i].r;
-            outputData[i * 3 + 1] = blurredImage[i].g;
-            outputData[i * 3 + 2] = blurredImage[i].b;
+        // PPM formatında kaydetme
+        std::ofstream outFile(outputPath);
+        if (!outFile) {
+            std::cerr << "Failed to create output file!" << std::endl;
+            return -1;
         }
+        outFile << "P3\n" << width << " " << height << "\n255\n";
+        for (const auto& pixel : blurredImage) {
+            outFile << (int)pixel.r << " " << (int)pixel.g << " " << (int)pixel.b << "\n";
+        }
+        outFile.close();
 
-        stbi_write_png(outputPath.c_str(), width, height, 3, outputData.data(), width * 3);
         double elapsedSeconds = static_cast<double>(end - start) / CLOCKS_PER_SEC;
         std::cout << "Blurred image saved to: " << outputPath << std::endl;
         std::cout << "Time taken for Gaussian blur: " << elapsedSeconds << " seconds." << std::endl;
@@ -140,4 +145,3 @@ int main() {
     }
     return 0;
 }
-
